@@ -11,7 +11,7 @@ def download_image(url, folder, filename):
     """
     if not os.path.exists(folder):
         os.makedirs(folder)
-    
+
     filepath = os.path.join(folder, filename)
     try:
         response = requests.get(url, stream=True)
@@ -41,7 +41,7 @@ def read_parquet_and_download_images(file_path, output_dir):
             caption = row['title']
             if pd.notna(image_url):
                 # Creating a unique filename for each image
-                filename = f"{caption}.jpg"
+                filename = f"{index}.jpg"
                 download_image(image_url, output_dir, filename)
 
     except Exception as e:
