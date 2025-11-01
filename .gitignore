@@ -1,0 +1,28 @@
+__pycache__/
+.ipynb_checkpoints
+wandb/
+*.jpg
+*.safetensors
+*.mp4
+*.png
+*.gif
+*.pth
+*.pt
+.Python
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+eggs/
+.eggs/
+
+# VSCode
+.vscode/
+
+# DS Store
+.DS_Store
+
+# Data directory
+data/
