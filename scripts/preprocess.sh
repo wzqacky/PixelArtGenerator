@@ -1,33 +1,33 @@
 #!/bin/bash
-set -e -i
+set -e
 
-REPO_ID="bghira/free-to-use-pixelart"
-RAW_DATA_DIR_HF="data/pixilart"
-RAW_DATA_DIR_KAGGLE="data/pixel-art-512x512"
-PROCESSED_DATA_DIR="data/pixilart_processed"
+upload_to_hf=false
+# Parse command-line arguments
+for arg in "$@"
+do
+    case $arg in
+        --upload_to_hf)
+        upload_to_hf=true
+        shift # Remove --upload_to_hf from processing
+        ;;
+    esac
+done
 
-# Download the raw datasets
-echo ">>> Step 1: Downloading raw dataset (${REPO_ID}) from HuggingFace and KaggleHub..."
-if [ -d "${RAW_DATA_DIR_HF}" ]; then
-    echo "HuggingFace dataset already exists."
-else
-    python preprocess/download_hf.py --repo_id bghira/free-to-use-pixelart --local_dir ${RAW_DATA_DIR_HF} --repo_type dataset
+PROCESSED_DATA_DIR_KAGGLE="data/pixel-art-512x512"
+PROCESSED_DATA_DIR_HF="data/pixilart_processed"
+CAPTIONED_DATA_PATH="data/captioned_pixelart.parquet"
+REPO_ID="wzqacky/captioned_pixelart_images"
+
+echo ">>> Generating captions for images..."
+python preprocess/caption_and_build_parquet.py --image_dirs "${PROCESSED_DATA_DIR_KAGGLE}" "${PROCESSED_DATA_DIR_HF}" --output_path "${CAPTIONED_DATA_PATH}"
+echo "--- Captioning complete. ---"
+
+if [ "$upload_to_hf" = true ]; then
+    echo ">>> Uploading dataset to HuggingFace Hub..."
+    if [ ! -f "${CAPTIONED_DATA_PATH}" ]; then
+        echo "Error: Captioned data file not found at ${CAPTIONED_DATA_PATH}. Please ensure your run on captioning is complete."
+        exit 1
+    fi
+    python preprocess/upload_to_hf.py --dataset_path "${CAPTIONED_DATA_PATH}" --repo_id "${REPO_ID}"
+    echo "--- Upload complete. ---"
 fi
-if [ -d "${RAW_DATA_DIR_KAGGLE} "]; then
-    echo "Kaggle dataset already exists."
-else
-    python preprocess/download_kaggle.py --data_id artvandaley/curated-pixel-art-512x512 --local_dir ${RAW_DATA_DIR_KAGGLE}
-fi
-echo "Download complete."
-
-echo ">>> Processing Parquet file and downloading images to ${PROCESSED_DATA_DIR}..."
-PARQUET_FILE_PATH=$(find "${RAW_DATA_DIR_HF}" -type f -name "*.parquet" | head -n 1)
-
-if [ -z "${PARQUET_FILE_PATH}" ]; then
-    echo "Error: No .parquet file found in the downloaded dataset at ${RAW_DATA_DIR}."
-    exit 1
-fi
-echo "Preprocessing parquet file: ${PARQUET_FILE_PATH}"
-
-python preprocess/process_parquet.py --file_path "${PARQUET_FILE_PATH}" --output_dir "${PROCESSED_DATA_DIR}"
-echo "--- Preprocessing complete. ---"
