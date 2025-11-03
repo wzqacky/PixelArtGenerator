@@ -746,9 +746,9 @@ def main():
     else:
         data_files = {}
         if args.train_data_dir is not None:
-            data_files["train"] = os.path.join(args.train_data_dir, "*.csv")
+            data_files["train"] = os.path.join(args.train_data_dir, "*.parquet")
         dataset = load_dataset(
-            path="csv",
+            path="parquet",
             data_files=data_files,
             cache_dir=args.cache_dir,
         )
@@ -816,7 +816,7 @@ def main():
     )
 
     def preprocess_train(examples):
-        images = [Image.open(img_path).convert("RGB") for img_path in examples[image_column]]
+        images = [image.convert("RGB") for image in examples[image_column]]
         examples["pixel_values"] = [train_transforms(image) for image in images]
         examples["input_ids"] = tokenize_captions(examples)
         return examples
