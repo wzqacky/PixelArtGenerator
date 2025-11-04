@@ -6,7 +6,7 @@ export output_dir="pixel-art-model"
 python train_text_to_image.py \
     --pretrained_model_name_or_path=$MODEL_NAME \
     --train_data_dir=$train_data_dir \
-    --image_column filename \
+    --image_column image \
     --caption_column caption \
     --use_ema \
     --resolution=512 \
