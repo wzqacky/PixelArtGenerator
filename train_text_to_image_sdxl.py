@@ -193,6 +193,9 @@ def parse_args(input_args=None):
         "--image_column", type=str, default="image", help="The column of the dataset containing an image."
     )
     parser.add_argument(
+        "--image_column_type", type=str, default="pil", help="The format of the image column."
+    )
+    parser.add_argument(
         "--caption_column",
         type=str,
         default="text",
@@ -480,6 +483,11 @@ def parse_args(input_args=None):
             f.lower() for f in dir(transforms.InterpolationMode) if not f.startswith("__") and not f.endswith("__")
         ],
         help="The image interpolation method to use for resizing images.",
+    )
+    parser.add_argument(
+        "--save_intermediate_latents",
+        action="store_true",
+        help="Whether to save intermediate latents as a GIF during validation.",
     )
 
     if input_args is not None:
@@ -881,8 +889,12 @@ def main(args):
     train_transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
 
     def preprocess_train(examples):
-        images = [Image.open(io.BytesIO(image_bytes)).convert("RGB") for image_bytes in examples[image_column]]
-        #images = [image.convert("RGB") for image in examples[image_column]]
+        if args.image_column_type == "pil":
+            images = [image.convert("RGB") for image in examples[image_column]]
+        elif args.image_column_type == "byte":
+            images = [Image.open(io.BytesIO(image_bytes)).convert("RGB") for image_bytes in examples[image_column]]
+        else:
+            raise ValueError(f"Unsupported image column type: {args.image_column_type}.")
         # image aug
         original_sizes = []
         all_images = []
@@ -1263,26 +1275,59 @@ def main(args):
                     else None
                 )
                 pipeline_args = {"prompt": args.validation_prompt}
+                images = []
+                all_intermediate_images = []
+                for i in range(args.num_validation_images):
+                    intermediate_images = []
 
-                with autocast_ctx:
-                    images = [
-                        pipeline(**pipeline_args, generator=generator, num_inference_steps=25).images[0]
-                        for _ in range(args.num_validation_images)
-                    ]
+                    if args.save_intermediate_latents:
+                        def process_intermediate_latents(pipe, step_index, timestep, callback_kwargs):
+                            latents = callback_kwargs["latents"]
+                            latents = 1 / pipe.vae.config.scaling_factor * latents
+                            with torch.no_grad():
+                                image = pipe.vae.decode(latents.to(pipe.vae.dtype)).sample
+                            image = (image / 2 + 0.5).clamp(0,1)
+                            image = image.cpu().permute(0,2,3,1).squeeze(0).numpy()
+                            image_np = (image * 255).round().astype("uint8")
+                            intermediate_images.append(Image.fromarray(image_np))
+                            return callback_kwargs
+
+                        pipeline_args["callback_on_step_end"] = process_intermediate_latents
+                        pipeline_args["callback_on_step_end_tensor_inputs"] = ["latents"]
+
+                    with autocast_ctx:
+                        output = pipeline(**pipeline_args, generator=generator, num_inference_steps=25)
+                        image = output.images[0]
+                    images.append(image)
+
+                    if intermediate_images:
+                        all_intermediate_images.append(intermediate_images + [image])
 
                 for tracker in accelerator.trackers:
                     if tracker.name == "tensorboard":
                         np_images = np.stack([np.asarray(img) for img in images])
                         tracker.writer.add_images("validation", np_images, epoch, dataformats="NHWC")
+                        if args.save_intermediate_latents:
+                            for i, frames in enumerate(all_intermediate_images):
+                                np_frames = np.array(frames)
+                                np_frames_chw = np.transpose(np_frames, (0, 3, 1, 2))
+                                tracker.writer.add_video(
+                                    f"validation_gif_{i}", np_frames_chw[np.newaxis], global_step=epoch, fps=10
+                                )
+
                     if tracker.name == "wandb":
-                        tracker.log(
-                            {
-                                "validation": [
-                                    wandb.Image(image, caption=f"{i}: {args.validation_prompt}")
-                                    for i, image in enumerate(images)
-                                ]
-                            }
-                        )
+                        log_data = {
+                            "validation": [
+                                wandb.Image(image, caption=f"{i}: {args.validation_prompt}")
+                                for i, image in enumerate(images)
+                            ]
+                        }
+                        if all_intermediate_images:
+                            for i, frames in enumerate(all_intermediate_images):
+                                np_frames = np.array(frames)
+                                np_frames_chw = np.transpose(np_frames, (0, 3, 1, 2))
+                                log_data[f"validation/gif_{i}"] = wandb.Video(np_frames_chw, fps=16, format="gif")
+                        tracker.log(log_data)
 
                 del pipeline
                 if is_torch_npu_available():
