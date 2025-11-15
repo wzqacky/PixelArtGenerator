@@ -55,8 +55,7 @@ def caption_images_in_directory(image_dirs, output_path):
             buffer = io.BytesIO()
             raw_image.save(buffer, format="PNG")
             image_bytes = buffer.getvalue()
-
-            captions_data.append({"image": image_bytes, 'caption': filtered_caption})
+            captions_data.append({"path": image_path, "image": image_bytes, 'caption': filtered_caption})
 
         except Exception as e:
             print(f"Could not process {image_path}: {e}")
