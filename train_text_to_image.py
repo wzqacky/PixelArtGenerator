@@ -166,11 +166,27 @@ def log_validation(vae, text_encoder, tokenizer, unet, args, accelerator, weight
         generator = torch.Generator(device=accelerator.device).manual_seed(args.seed)
 
     images = []
+    all_intermediate_images = []
     for i in range(len(args.validation_prompts)):
         if torch.backends.mps.is_available():
             autocast_ctx = nullcontext()
         else:
             autocast_ctx = torch.autocast(accelerator.device.type)
+        intermediate_images = []
+        if args.save_intermediate_latents:
+            def process_intermediate_latents(pipe, step_index, timestep, callback_kwargs):
+                latents = callback_kwargs["latents"]
+                latents = 1 / pipe.vae.config.scaling_factor * latents
+                with torch.no_grad():
+                    image = pipe.vae.decode(latents.to(pipe.vae.dtype)).sample
+                image = (image / 2 + 0.5).clamp(0,1)
+                image = image.cpu().permute(0,2,3,1).squeeze(0).numpy()
+                image_np = (image * 255).round().astype("uint8")
+                intermediate_images.append(Image.fromarray(image_np))
+                return callback_kwargs
+
+            pipeline_args["callback_on_step_end"] = process_intermediate_latents
+            pipeline_args["callback_on_step_end_tensor_inputs"] = ["latents"]
 
         with autocast_ctx:
             image = pipeline(args.validation_prompts[i], num_inference_steps=20, generator=generator).images[0]
@@ -181,17 +197,27 @@ def log_validation(vae, text_encoder, tokenizer, unet, args, accelerator, weight
         if tracker.name == "tensorboard":
             np_images = np.stack([np.asarray(img) for img in images])
             tracker.writer.add_images("validation", np_images, epoch, dataformats="NHWC")
-        elif tracker.name == "wandb":
-            tracker.log(
-                {
-                    "validation": [
-                        wandb.Image(image, caption=f"{i}: {args.validation_prompts[i]}")
-                        for i, image in enumerate(images)
-                    ]
-                }
-            )
-        else:
-            logger.warning(f"image logging not implemented for {tracker.name}")
+            if args.save_intermediate_latents:
+                for i, frames in enumerate(all_intermediate_images):
+                    np_frames = np.array(frames)
+                    np_frames_chw = np.transpose(np_frames, (0, 3, 1, 2))
+                    tracker.writer.add_video(
+                        f"validation_gif_{i}", np_frames_chw[np.newaxis], global_step=epoch, fps=10
+                    )
+
+        if tracker.name == "wandb":
+            log_data = {
+                "validation": [
+                    wandb.Image(image, caption=f"{i}: {args.validation_prompt}")
+                    for i, image in enumerate(images)
+                ]
+            }
+            if all_intermediate_images:
+                for i, frames in enumerate(all_intermediate_images):
+                    np_frames = np.array(frames)
+                    np_frames_chw = np.transpose(np_frames, (0, 3, 1, 2))
+                    log_data[f"validation/gif_{i}"] = wandb.Video(np_frames_chw, fps=16, format="gif")
+            tracker.log(log_data)
 
     del pipeline
     torch.cuda.empty_cache()
@@ -252,6 +278,9 @@ def parse_args():
     )
     parser.add_argument(
         "--image_column", type=str, default="image", help="The column of the dataset containing an image."
+    )
+    parser.add_argument(
+        "--image_column_type", type=str, default="pil", help="The format of the image column."
     )
     parser.add_argument(
         "--caption_column",
@@ -747,7 +776,7 @@ def main():
     else:
         data_files = {}
         if args.train_data_dir is not None:
-            data_files["train"] = os.path.join(args.train_data_dir, "*.parquet")
+            data_files["train"] = args.train_data_dir
         dataset = load_dataset(
             path="parquet",
             data_files=data_files,
@@ -817,7 +846,12 @@ def main():
     )
 
     def preprocess_train(examples):
-        images = [Image.open(io.BytesIO(image_bytes)).convert("RGB") for image_bytes in examples[image_column]]
+        if args.image_column_type == "pil":
+            images = [image.convert("RGB") for image in examples[image_column]]
+        elif args.image_column_type == "byte":
+            images = [Image.open(io.BytesIO(image_bytes)).convert("RGB") for image_bytes in examples[image_column]]
+        else:
+            raise ValueError(f"Unsupported image column type: {args.image_column_type}.")
         examples["pixel_values"] = [train_transforms(image) for image in images]
         examples["input_ids"] = tokenize_captions(examples)
         return examples
@@ -827,6 +861,7 @@ def main():
             dataset["train"] = dataset["train"].shuffle(seed=args.seed).select(range(args.max_train_samples))
         # Set the training transforms
         train_dataset = dataset["train"].with_transform(preprocess_train)
+        train_dataset = train_dataset.remove_columns("path")
 
     def collate_fn(examples):
         pixel_values = torch.stack([example["pixel_values"] for example in examples])

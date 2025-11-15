@@ -847,7 +847,7 @@ def main(args):
     else:
         data_files = {}
         if args.train_data_dir is not None:
-            data_files["train"] = os.path.join(args.train_data_dir, "*.parquet")
+            data_files["train"] = args.train_data_dir
         dataset = load_dataset(
             "parquet",
             data_files=data_files,
@@ -928,6 +928,7 @@ def main(args):
             dataset["train"] = dataset["train"].shuffle(seed=args.seed).select(range(args.max_train_samples))
         # Set the training transforms
         train_dataset = dataset["train"].with_transform(preprocess_train)
+        train_dataset = train_dataset.remove_columns("path")
 
     # Let's first compute all the embeddings so that we can free up the text encoders
     # from memory. We will pre-compute the VAE encodings too.
