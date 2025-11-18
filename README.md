@@ -30,3 +30,17 @@ Then, run the training
 ```
 bash scripts/train.sh
 ```
+
+# Inference
+## Base model
+```
+python inference.py --base_model stabilityai/stable-diffusion-xl-base-1.0 --prompt "a cute shiba inu"
+```
+## Full-finetuned model
+```
+python inference.py --model_path checkpoints/pixel-art-model_sdxl-filtered-dataset --prompt "a cute shiba inu"
+```
+## LoRA model
+```
+python inference.py --model_path checkpoints/pixel-art-model_sdxl_lora-filterted-dataset --base_model stabilityai/stable-diffusion-xl-base-1.0 --lora --prompt "a cute shiba inu"
+```
