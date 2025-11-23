@@ -48,7 +48,13 @@ python inference.py --model_path wzqacky/pixel-art-model-sdxl --prompt "a cute s
 ```
 python inference.py --model_path wzqacky/pixel-art-model-sdxl-lora --base_model stabilityai/stable-diffusion-xl-base-1.0 --lora --prompt "a cute shiba inu"
 ```
-
+## Controlnet
+```
+python inference.py --model_path wzqacky/pixel-art-model-controlnet-canny --base_model stabilityai/stable-diffusion-xl-base-1.0 --controlnet --prompt "a cute shiba inu" --control_image controlnet_validation/canny/a-cute-cartoon-shiba-inu.png
+```
+```
+python inference.py --model_path wzqacky/pixel-art-model-controlnet-palette --base_model stabilityai/stable-diffusion-xl-base-1.0 --controlnet  --prompt "a cute shiba inu" --control_image controlnet_validation/palette/a-cute-cartoon-shiba-inu.png
+```
 # Uploading finetuned model
 ```
 python hf/upload_to_hf.py --path checkpoints/pixel-art-model_sdxl-filtered-dataset --repo_id wzqacky/pixel-art-model-sdxl --repo_type model
