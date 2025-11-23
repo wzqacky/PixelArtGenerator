@@ -10,8 +10,8 @@ from typing import List
 class Config:
     # Default Model Paths
     BASE_MODEL_PATH = "stabilityai/stable-diffusion-xl-base-1.0"
-    FULL_FINETUNED_MODEL_PATH = "checkpoints/pixel-art-model_sdxl-filtered-dataset"
-    LORA_MODEL_PATH = "checkpoints/pixel-art-model_sdxl_lora-filterted-dataset"
+    FULL_FINETUNED_MODEL_PATH = "wzqacky/pixel-art-model-sdxl"
+    LORA_MODEL_PATH = "wzqacky/pixel-art-model-sdxl-lora"
     
     # Generation Output Folders
     BASE_MODEL_OUTPUT_FOLDER = "./base_model_images"
