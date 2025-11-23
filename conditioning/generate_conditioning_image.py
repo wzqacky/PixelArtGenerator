@@ -1,5 +1,6 @@
 import argparse
 import os
+from PIL import Image
 
 from utils import build_canny_map, build_color_palette
 

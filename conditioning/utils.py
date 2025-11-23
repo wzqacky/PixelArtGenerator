@@ -39,7 +39,7 @@ def build_canny_map(src_path, src_byte=None, plot=False, return_byte=True):
         plt.tight_layout()
         plt.savefig(f"visualization/canny/{'-'.join(src_path.split('/'))}_canny.png")
     if not return_byte:
-        return edge
+        return Image.fromarray(edges)
     # Encode the edge map to PNG bytes
     is_success, buffer = cv2.imencode(".png", edges)
     if not is_success:
