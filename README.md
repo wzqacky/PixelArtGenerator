@@ -30,6 +30,10 @@ Then, run the training
 ```
 bash scripts/train.sh
 ```
+Or, submitting a sbatch job
+```
+sbatch --wait -o slurm.out scripts/run.sbatch
+```
 
 # Inference
 ## Base model
@@ -38,11 +42,16 @@ python inference.py --base_model stabilityai/stable-diffusion-xl-base-1.0 --prom
 ```
 ## Full-finetuned model
 ```
-python inference.py --model_path checkpoints/pixel-art-model_sdxl-filtered-dataset --prompt "a cute shiba inu"
+python inference.py --model_path wzqacky/pixel-art-model-sdxl --prompt "a cute shiba inu"
 ```
 ## LoRA model
 ```
-python inference.py --model_path checkpoints/pixel-art-model_sdxl_lora-filterted-dataset --base_model stabilityai/stable-diffusion-xl-base-1.0 --lora --prompt "a cute shiba inu"
+python inference.py --model_path wzqacky/pixel-art-model-sdxl-lora --base_model stabilityai/stable-diffusion-xl-base-1.0 --lora --prompt "a cute shiba inu"
+```
+
+# Uploading finetuned model
+```
+python hf/upload_to_hf.py --path checkpoints/pixel-art-model_sdxl-filtered-dataset --repo_id wzqacky/pixel-art-model-sdxl --repo_type model
 ```
 
 # Evaluation

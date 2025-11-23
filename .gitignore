@@ -10,7 +10,7 @@ wandb/
 *.pt
 .Python
 
-# Distribution / packaging
+# Distribution/ packaging
 build/
 dist/
 *.egg-info/
@@ -26,6 +26,12 @@ eggs/
 
 # Data directory
 data/
+
+# Model directory
+checkpoints/
+
+# Temporary directory
+tmp*/
 
 # Eval data directory
 eval/base_model_data

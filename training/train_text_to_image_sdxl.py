@@ -1323,7 +1323,7 @@ def main(args):
                                 for i, image in enumerate(images)
                             ]
                         }
-                        if all_intermediate_images:
+                        if args.save_intermediate_latents:
                             for i, frames in enumerate(all_intermediate_images):
                                 np_frames = np.array(frames)
                                 np_frames_chw = np.transpose(np_frames, (0, 3, 1, 2))
