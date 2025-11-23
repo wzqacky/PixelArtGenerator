@@ -7,7 +7,7 @@ FILE_NAME="captioned_pixelart_images.parquet"
 
 echo ">>> Downloading processed dataset file: ${FILE_NAME} from ${REPO_ID}..."
 
-python preprocess/download_hf.py \
+python hf/download_hf.py \
     --repo_id "${REPO_ID}" \
     --local_dir "${LOCAL_DIR}" \
     --repo_type dataset \
