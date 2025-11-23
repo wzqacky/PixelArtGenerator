@@ -26,3 +26,8 @@ eggs/
 
 # Data directory
 data/
+
+# Eval data directory
+eval/base_model_data
+eval/base_model_images
+eval/lora_model_images
