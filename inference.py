@@ -29,11 +29,9 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if args.base_model and not args.model_path:
         model_path = args.base_model
-        pipe = DiffusionPipeline.from_pretrained(args.base_model)
+        pipe = DiffusionPipeline.from_pretrained(model_path)
     if args.model_path:
         model_path = args.model_path
-        if not args.lora:
-            pipe = DiffusionPipeline.from_pretrained(model_path)
         if args.lora:
             if not args.base_model:
                 print("Error: Please provide the base model for loading the LoRA weight.")
@@ -46,9 +44,11 @@ if __name__ == "__main__":
                 sys.exit(1)
             if not args.control_image:
                 print("Error: Please provide the control image for controlnet image generation.")
-            controlnet = ControlNetModel.from_pretrained(model_path, torch_dtype=torch.float16)
-            pipe = StableDiffusionXLControlNetPipeline.from_pretrained(args.base_mdoel, controlnet=controlnet, torch_dtype=torch.float16)
+            controlnet = ControlNetModel.from_pretrained(model_path)
+            pipe = StableDiffusionXLControlNetPipeline.from_pretrained(args.base_model, controlnet=controlnet)
             control_image = load_image(args.control_image).resize((512,512))
+        else:
+            pipe = DiffusionPipeline.from_pretrained(model_path)
             
     elif args.checkpoint_path:
         model_path = args.checkpoint_path
@@ -64,15 +64,17 @@ if __name__ == "__main__":
     if args.seed:
         generator = torch.Generator(device).manual_seed(args.seed)
 
+    generation_kwargs = {
+        "negative_prompt": args.negative_prompt,
+        "num_inference_steps": args.steps,
+        "guidance_scale": args.guidance_scale,
+        "generator": generator,
+        "image": control_image if args.controlnet else None}
     generated_image = pipe(
         args.prompt,
-        negative_prompt=args.negative_prompt,
-        num_inference_steps=args.steps,
-        guidance_scale=args.guidance_scale,
-        generator=generator,
-        image=control_image
+        **generation_kwargs
     ).images[0]
-    output_path = Path(args.output_path)
+    output_path = Path(args.output_path) / Path(model_path).name
     output_path.mkdir(exist_ok=True)
-    output_path = output_path / f"{Path(model_path).name}_{args.prompt.replace(' ','-')}.png"
+    output_path = output_path / f"{args.prompt.replace(' ','-')}.png"
     generated_image.save(output_path)
