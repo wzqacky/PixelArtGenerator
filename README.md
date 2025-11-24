@@ -44,3 +44,25 @@ python inference.py --model_path checkpoints/pixel-art-model_sdxl-filtered-datas
 ```
 python inference.py --model_path checkpoints/pixel-art-model_sdxl_lora-filterted-dataset --base_model stabilityai/stable-diffusion-xl-base-1.0 --lora --prompt "a cute shiba inu"
 ```
+
+# Evaluation
+## Generate data
+Base model
+```
+python generation_script_v2.py --model base
+```
+
+Full-finetuned model
+```
+python generation_script_v2.py --model full_finetuned
+```
+
+LoRA model
+```
+python generation_script_v2.py --model lora
+```
+
+## Make evaluation
+```
+python evaluation_script_v2.py 
+```
