@@ -31,3 +31,7 @@ data/
 eval/base_model_data
 eval/base_model_images
 eval/lora_model_images
+aesthetic_scores.csv
+evaluation_results/
+model_folder_evaluation/
+relevance_evaluation_results/
