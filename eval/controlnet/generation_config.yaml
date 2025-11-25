@@ -1,0 +1,17 @@
+base_model_path: stabilityai/stable-diffusion-xl-base-1.0
+canny_model_path: wzqacky/pixel-art-model-controlnet-canny
+palette_model_path: wzqacky/pixel-art-model-controlnet-palette
+base_output_folder: ./base_model_images
+canny_output_folder: ./canny_controlnet_images
+palette_output_folder: ./palette_controlnet_images
+prompts_csv_path: prompts.csv
+control_images_path: control_paths.csv
+num_control_per_prompt: 3
+num_images_per_control: 1
+image_resolution:
+- 512
+- 512
+inference_steps: 30
+guidance_scale: 7.5
+negative_prompt: 3d, smooth, blurry, soft, intricate, artifacts, low-quality
+seed_offset: 42

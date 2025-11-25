@@ -1,0 +1,15 @@
+base_model_path: stabilityai/stable-diffusion-xl-base-1.0
+full_finetuned_model_path: wzqacky/pixel-art-model-sdxl
+lora_model_path: wzqacky/pixel-art-model-sdxl-lora
+base_output_folder: ./base_model_images
+full_finetuned_output_folder: ./full_finetuned_images
+lora_output_folder: ./lora_model_images
+prompts_csv_path: prompts.csv
+num_images_per_prompt: 3
+image_resolution:
+- 512
+- 512
+inference_steps: 30
+guidance_scale: 7.5
+negative_prompt: 3d, smooth, blurry, soft, intricate, artifacts, low-quality
+seed_offset: 42
