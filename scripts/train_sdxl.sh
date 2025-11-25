@@ -4,7 +4,7 @@ export VAE_NAME="madebyollin/sdxl-vae-fp16-fix"
 export train_data_dir="data/filtered_pixelart_images.parquet"
 export output_dir="pixel-art-model_sdxl-filtered-dataset"
 
-python train_text_to_image_sdxl.py \
+python training/train_text_to_image_sdxl.py \
     --report_to wandb \
     --pretrained_model_name_or_path=$MODEL_NAME \
     --pretrained_vae_model_name_or_path=$VAE_NAME \
