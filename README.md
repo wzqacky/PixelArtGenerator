@@ -59,37 +59,40 @@ sbatch --wait -o slurm.out scripts/run.sbatch
 ```
 python inference.py \
     --base_model stabilityai/stable-diffusion-xl-base-1.0 \
-    --prompt "a cute shiba inu"
+    --prompt "a cute shiba inu" \
+    --model_type "base"
 ```
 ## Full-finetuned model
 ```
 python inference.py \
     --model_path wzqacky/pixel-art-model-sdxl \
-    --prompt "a cute shiba inu"
+    --prompt "a cute shiba inu" \
+    --model_type "full_finetuned"
 ```
 ## LoRA model
 ```
 python inference.py \
     --model_path wzqacky/pixel-art-model-sdxl-lora \
     --base_model stabilityai/stable-diffusion-xl-base-1.0 \
-    --lora \
-    --prompt "a cute shiba inu"
+    --prompt "a cute shiba inu" \
+    --model_type "lora"
 ```
 ## Controlnet
 ```
 python inference.py \
     --model_path wzqacky/pixel-art-model-controlnet-canny \
     --base_model stabilityai/stable-diffusion-xl-base-1.0 \
-    --controlnet --prompt "a cute shiba inu" \
-    --control_image controlnet_validation/canny/a-cute-cartoon-shiba-inu.png
+    --prompt "a cute shiba inu" \
+    --control_image controlnet_validation/canny/a-cute-cartoon-shiba-inu.png \
+    --model_type "controlnet"
 ```
 ```
 python inference.py \
     --model_path wzqacky/pixel-art-model-controlnet-palette \
     --base_model stabilityai/stable-diffusion-xl-base-1.0 \
-    --controlnet \
     --prompt "a cute shiba inu" \
-    --control_image controlnet_validation/palette/a-cute-cartoon-shiba-inu.png
+    --control_image controlnet_validation/palette/a-cute-cartoon-shiba-inu.png \
+    --model_type "controlnet"
 ```
 # Uploading finetuned model
 ```
@@ -100,23 +103,25 @@ python hf/upload_to_hf.py \
 ```
 
 # Evaluation
-## Generate data
+## Generate data (T2I)
+Change the evaluation parameters at `generation_config.yaml` and the prompts at `prompts.csv`
 Base model
 ```
-python generation_script_v2.py --model base
+cd eval/T2I
+python generation_script.py --model base
 ```
 
 Full-finetuned model
 ```
-python generation_script_v2.py --model full_finetuned
+python generation_script.py --model full_finetuned
 ```
 
 LoRA model
 ```
-python generation_script_v2.py --model lora
+python generation_script.py --model lora
 ```
 
 ## Make evaluation
 ```
-python evaluation_script_v2.py 
+python evaluation_script.py 
 ```
