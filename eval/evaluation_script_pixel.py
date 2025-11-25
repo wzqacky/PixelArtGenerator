@@ -328,7 +328,7 @@ def main():
     # 定义要评估的文件夹
     folders_dict = {
         'base_model': 'base_model_images',
-        'full_finetuned': 'full_finetuned_model_images', 
+        'full_finetuned': 'full_finetuned_images', 
         'lora_model': 'lora_model_images'
     }
     
