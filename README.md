@@ -1,3 +1,19 @@
+# Installing dependencies
+For Nvidia, install stable pytorch with the following versions compatible with CUDA from https://pytorch.org/get-started/locally/, e.g. CUDA 12.8:
+
+`pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128`
+
+Install the dependencies:
+
+`pip install -r requirements.txt`
+
+The training scripts requires `diffusers==0.36.0.dev0`, which has to be built from source:
+```
+git clone https://github.com/huggingface/diffusers.git
+cd diffusers
+pip install -e ".[torch]"
+```
+
 # Downloading dataset
 ## Raw dataset
 - Huggingface: https://huggingface.co/datasets/bghira/free-to-use-pixelart
@@ -20,17 +36,20 @@ bash scripts/preprocess.sh --upload_to_hf
 ```
 
 # Training
-The training script requires diffusers==0.36.0.dev0, which has to be built from source
+## Full finetuning
 ```
-git clone https://github.com/huggingface/diffusers.git
-cd diffusers
-pip install -e ".[torch]"
+bash scripts/train_sdxl.sh
 ```
-Then, run the training
+## LoRA
 ```
-bash scripts/train.sh
+bash scripts/train_sdxl_lora.sh
 ```
-Or, submitting a sbatch job
+## ControlNet
+```
+bash scripts/train_canny_controlnet.sh
+bash scripts/train_palette_controlnet.sh
+```
+## Sbatch
 ```
 sbatch --wait -o slurm.out scripts/run.sbatch
 ```
@@ -38,26 +57,46 @@ sbatch --wait -o slurm.out scripts/run.sbatch
 # Inference
 ## Base model
 ```
-python inference.py --base_model stabilityai/stable-diffusion-xl-base-1.0 --prompt "a cute shiba inu"
+python inference.py \
+    --base_model stabilityai/stable-diffusion-xl-base-1.0 \
+    --prompt "a cute shiba inu"
 ```
 ## Full-finetuned model
 ```
-python inference.py --model_path wzqacky/pixel-art-model-sdxl --prompt "a cute shiba inu"
+python inference.py \
+    --model_path wzqacky/pixel-art-model-sdxl \
+    --prompt "a cute shiba inu"
 ```
 ## LoRA model
 ```
-python inference.py --model_path wzqacky/pixel-art-model-sdxl-lora --base_model stabilityai/stable-diffusion-xl-base-1.0 --lora --prompt "a cute shiba inu"
+python inference.py \
+    --model_path wzqacky/pixel-art-model-sdxl-lora \
+    --base_model stabilityai/stable-diffusion-xl-base-1.0 \
+    --lora \
+    --prompt "a cute shiba inu"
 ```
 ## Controlnet
 ```
-python inference.py --model_path wzqacky/pixel-art-model-controlnet-canny --base_model stabilityai/stable-diffusion-xl-base-1.0 --controlnet --prompt "a cute shiba inu" --control_image controlnet_validation/canny/a-cute-cartoon-shiba-inu.png
+python inference.py \
+    --model_path wzqacky/pixel-art-model-controlnet-canny \
+    --base_model stabilityai/stable-diffusion-xl-base-1.0 \
+    --controlnet --prompt "a cute shiba inu" \
+    --control_image controlnet_validation/canny/a-cute-cartoon-shiba-inu.png
 ```
 ```
-python inference.py --model_path wzqacky/pixel-art-model-controlnet-palette --base_model stabilityai/stable-diffusion-xl-base-1.0 --controlnet  --prompt "a cute shiba inu" --control_image controlnet_validation/palette/a-cute-cartoon-shiba-inu.png
+python inference.py \
+    --model_path wzqacky/pixel-art-model-controlnet-palette \
+    --base_model stabilityai/stable-diffusion-xl-base-1.0 \
+    --controlnet \
+    --prompt "a cute shiba inu" \
+    --control_image controlnet_validation/palette/a-cute-cartoon-shiba-inu.png
 ```
 # Uploading finetuned model
 ```
-python hf/upload_to_hf.py --path checkpoints/pixel-art-model_sdxl-filtered-dataset --repo_id wzqacky/pixel-art-model-sdxl --repo_type model
+python hf/upload_to_hf.py \
+    --path checkpoints/pixel-art-model_sdxl-filtered-dataset \
+    --repo_id wzqacky/pixel-art-model-sdxl \
+    --repo_type model
 ```
 
 # Evaluation
