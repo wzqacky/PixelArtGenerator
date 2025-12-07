@@ -26,6 +26,8 @@ eggs/
 
 # Data directory
 data/
+processed_dataset/
+scores_csv/
 
 # Model directory
 checkpoints/
