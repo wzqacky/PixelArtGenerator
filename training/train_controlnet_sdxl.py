@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Adapted from https://github.com/huggingface/diffusers/blob/main/examples/controlnet/train_controlnet_sdxl.py
+
 import argparse
 import functools
 import gc
